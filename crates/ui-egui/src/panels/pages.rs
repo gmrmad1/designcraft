@@ -1324,14 +1324,17 @@ mod spread_label_tests {
         assert_eq!(labels(&app), ["1", "2–3", "4–5", "6–7", "8–9"]);
         app.run("layout.documentSetup", json!({"binding": "rightToLeft"})).unwrap();
         assert_eq!(labels(&app), ["1", "3–2", "5–4", "7–6", "9–8"]);
-        app.run("layout.section", json!({"page": 3, "startNumber": 1})).unwrap();
+        // Roman numerals mark the section without moving a page: a start number that changes a
+        // page's parity would give it the other side and another spread.
+        app.run("layout.section", json!({"page": 3, "startNumber": 1, "style": "upperRoman"})).unwrap();
         let got = labels(&app);
-        assert_eq!(got[1], "1, 2");
-        assert_eq!(got[2], "3–2");
+        assert_eq!(got[1], "I, 2");
+        assert_eq!(got[2], "III–II");
         app.run("layout.pages.toSpread", json!({"page": 4, "spread": 1})).unwrap();
-        // Three pages, drawn in document order: 2, 3 and 4 are numbered 2, 1 and 2, and the
-        // section that starts on page 3 stays inside the spread, so the names stay apart.
-        assert_eq!(labels(&app)[1], "2, 1, 2");
+        // Three pages, drawn in document order: 2, 3 and 4 are numbered 2, I and II, and the
+        // section that starts on page 3 stays inside the spread, so the names stay apart. The
+        // names differ, so a label put in reverse order fails the assertion.
+        assert_eq!(labels(&app)[1], "2, I, II");
     }
 
     /// Labels navigate to document spreads, including when parent editing was active.
